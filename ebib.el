@@ -3969,6 +3969,26 @@ or on the region if it is active."
                                (cadr result)
                                (if (nth 2 result) "a" "no"))))))))))
 
+(defun ebib-import-from-doi (doi)
+  "Add an entry coresponding to DOI to the current database."
+  (interactive "sDOI: ")
+  (with-temp-buffer
+    (kill-region (point-min) (point-max))
+    (let ((exitcode (call-process "curl" nil t nil
+                                  "-L"
+                                  "-s"
+                                  "-H"
+                                  "Accept: text/bibliography; style=bibtex"
+                                  (format "http://dx.doi.org/%s" doi))))
+      (if (not (= exitcode 0))
+          (error "[Ebib] Something went wrong during entry retrieval. Please check you internet connection.")
+        (if (save-excursion
+              (goto-char (point-min))
+              (search-forward "DOI Not Found" nil t))
+            (error "[Ebib] DOI not found")
+          (ebib-import)
+          (message "[Ebib] Retrieve entry for DOI: %s" doi))))))
+
 (defun ebib--get-db-from-filename (search-filename)
   "Return the database struct associated with SEARCH-FILENAME."
   (when search-filename
